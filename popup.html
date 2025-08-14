@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Auto-Fill Forms</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        width: 380px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background: #fafbfc;
+        color: #1a1d1f;
+        line-height: 1.6;
+        font-size: 14px;
+      }
+
+      .container {
+        background: #ffffff;
+        border: 1px solid #e6ebf1;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 1px rgba(0, 0, 0, 0.12);
+      }
+
+      /* Header */
+      .header {
+        background: #f8f9fa;
+        border-bottom: 1px solid #e6ebf1;
+        padding: 16px 20px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1a1d1f;
+        margin-bottom: 2px;
+        letter-spacing: -0.3px;
+      }
+
+      .header p {
+        font-size: 13px;
+        color: #6c737f;
+        font-weight: 400;
+      }
+
+      /* Main Content */
+      .content {
+        padding: 20px;
+      }
+
+      /* Mode Switcher */
+      .mode-switcher {
+        display: flex;
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 3px;
+        margin-bottom: 24px;
+        border: 1px solid #e6ebf1;
+      }
+
+      .mode-button {
+        flex: 1;
+        padding: 11px 16px;
+        border: none;
+        background: transparent;
+        font-size: 14px;
+        font-weight: 500;
+        color: #6c737f;
+        border-radius: 7px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        letter-spacing: -0.1px;
+      }
+
+      .mode-button.active {
+        background: #ffffff;
+        color: #1a1d1f;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.12);
+      }
+
+      .mode-button:hover:not(.active) {
+        color: #434951;
+        background: rgba(255, 255, 255, 0.7);
+      }
+
+      /* Profile Selection Section */
+      .profile-section {
+        margin-bottom: 24px;
+      }
+
+      .profile-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: #1a1d1f;
+        margin-bottom: 8px;
+        letter-spacing: -0.1px;
+      }
+
+      .profile-select {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        background: #ffffff;
+        font-size: 14px;
+        color: #1a1d1f;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 12px center;
+        background-repeat: no-repeat;
+        background-size: 16px;
+        padding-right: 40px;
+      }
+
+      .profile-select:hover {
+        border-color: #9ca3af;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+
+      .profile-select:focus {
+        outline: none;
+        border-color: #1a1d1f;
+        box-shadow: 0 0 0 3px rgba(26, 29, 31, 0.1);
+      }
+
+      /* CSV Upload Section */
+      .upload-section {
+        margin-bottom: 24px;
+      }
+
+      .file-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: #222222;
+        margin-bottom: 8px;
+        cursor: pointer;
+        letter-spacing: -0.1px;
+      }
+
+      .file-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px dashed #b0b0b0;
+        border-radius: 8px;
+        background: #fafafa;
+        font-size: 14px;
+        color: #717171;
+        transition: all 0.15s ease;
+        cursor: pointer;
+      }
+
+      .file-input:hover {
+        border-color: #222222;
+        background: #f7f7f7;
+      }
+
+      .file-input:focus {
+        outline: none;
+        border-color: #222222;
+        box-shadow: 0 0 0 2px rgba(34, 34, 34, 0.1);
+      }
+
+      .file-status {
+        margin-top: 8px;
+        font-size: 13px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        display: none;
+        font-weight: 500;
+      }
+
+      .file-status.success {
+        background: #f0f9f0;
+        color: #1d4620;
+        border: 1px solid #d4edda;
+      }
+
+      .file-status.error {
+        background: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+      }
+
+      /* User Profile Display */
+      .user-profile {
+        background: #f8f9fa;
+        border: 1px solid #e6ebf1;
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+
+      .profile-header {
+        font-size: 13px;
+        font-weight: 600;
+        color: #6c737f;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .profile-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1a1d1f;
+        margin-bottom: 4px;
+        letter-spacing: -0.2px;
+      }
+
+      .profile-details {
+        font-size: 13px;
+        color: #6c737f;
+        line-height: 1.5;
+      }
+
+      /* Fill Button */
+      .fill-button {
+        width: 100%;
+        background: #1a1d1f;
+        color: #ffffff;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 18px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-bottom: 20px;
+        letter-spacing: -0.1px;
+      }
+
+      .fill-button:hover:not(:disabled) {
+        background: #2d3138;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(26, 29, 31, 0.2);
+      }
+
+      .fill-button:active {
+        transform: translateY(0);
+      }
+
+      .fill-button:disabled {
+        background: #f1f3f5;
+        color: #9ca3af;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+        border: 1px solid #e6ebf1;
+      }
+
+      /* Status Message */
+      .status {
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 20px;
+        display: none;
+        letter-spacing: -0.1px;
+      }
+
+      .status.success {
+        background: #f0f9ff;
+        color: #0c4a6e;
+        border: 1px solid #bae6fd;
+      }
+
+      .status.error {
+        background: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+      }
+
+      .status.info {
+        background: #f8f9fa;
+        color: #434951;
+        border: 1px solid #e6ebf1;
+      }
+
+      /* Statistics */
+      .stats {
+        background: #fafafa;
+        border: 1px solid #ebebeb;
+        border-radius: 8px;
+        padding: 20px;
+        display: none;
+      }
+
+      .stats-header {
+        font-size: 14px;
+        font-weight: 600;
+        color: #222222;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        letter-spacing: -0.1px;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+
+      .stat-item {
+        text-align: center;
+        padding: 12px 8px;
+        background: #ffffff;
+        border-radius: 6px;
+        border: 1px solid #ebebeb;
+      }
+
+      .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #222222;
+        line-height: 1;
+        letter-spacing: -0.3px;
+      }
+
+      .stat-label {
+        font-size: 12px;
+        color: #717171;
+        margin-top: 4px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+
+      /* Results Details */
+      .results {
+        max-height: 140px;
+        overflow-y: auto;
+        border-top: 1px solid #ebebeb;
+        padding-top: 16px;
+      }
+
+      .result-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 0;
+        font-size: 13px;
+      }
+
+      .result-icon {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 600;
+        flex-shrink: 0;
+      }
+
+      .result-icon.success {
+        background: #d4edda;
+        color: #1d4620;
+      }
+
+      .result-icon.error {
+        background: #fecaca;
+        color: #991b1b;
+      }
+
+      .result-text {
+        color: #484848;
+        line-height: 1.4;
+        font-weight: 400;
+      }
+
+      /* Scrollbar */
+      .results::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .results::-webkit-scrollbar-track {
+        background: #f7f7f7;
+        border-radius: 3px;
+      }
+
+      .results::-webkit-scrollbar-thumb {
+        background: #b0b0b0;
+        border-radius: 3px;
+      }
+
+      .results::-webkit-scrollbar-thumb:hover {
+        background: #717171;
+      }
+
+      /* Loading State */
+      .loading {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Hidden utility */
+      .hidden {
+        display: none !important;
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 400px) {
+        body {
+          width: 320px;
+        }
+
+        .content {
+          padding: 16px;
+        }
+
+        .header {
+          padding: 14px 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <h1>FillEngine</h1>
+        <p>Formulaires automatisés</p>
+      </div>
+
+      <!-- Content -->
+      <div class="content">
+        <!-- Mode Switcher -->
+        <div class="mode-switcher">
+          <button id="profileModeBtn" class="mode-button active">Profils</button>
+          <button id="csvModeBtn" class="mode-button">Upload CSV</button>
+        </div>
+
+        <!-- Profile Selection Section -->
+        <div id="profileSection" class="profile-section">
+          <label for="profileSelect" class="profile-label">Choisir un profil</label>
+          <select id="profileSelect" class="profile-select">
+            <option value="">Sélectionner...</option>
+          </select>
+        </div>
+
+        <!-- CSV Upload Section -->
+        <div id="csvSection" class="upload-section hidden">
+          <label for="csvFileInput" class="file-label">Importer un fichier CSV</label>
+          <input type="file" id="csvFileInput" accept=".csv" class="file-input" />
+          <div class="file-status" id="fileStatus"></div>
+        </div>
+
+        <!-- User Profile Display -->
+        <div id="userProfileDisplay" class="user-profile" style="display: none">
+          <div class="profile-header">Profil actif</div>
+          <div class="profile-info">
+            <div class="profile-name" id="profileName">-</div>
+            <div class="profile-details" id="profileDetails">-</div>
+          </div>
+        </div>
+
+        <!-- Fill Button -->
+        <button id="fillFormBtn" class="fill-button">
+          <span class="button-text">Remplir le formulaire</span>
+        </button>
+
+        <!-- Status Message -->
+        <div id="status" class="status"></div>
+
+        <!-- Statistics -->
+        <div id="stats" class="stats">
+          <div class="stats-header">Résultats</div>
+
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-value" id="fieldsDetected">-</div>
+              <div class="stat-label">Questions</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="fieldsFilled">-</div>
+              <div class="stat-label">Remplis</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="successRate">-</div>
+              <div class="stat-label">Taux</div>
+            </div>
+          </div>
+
+          <div class="results" id="results"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
