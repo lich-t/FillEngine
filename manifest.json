@@ -7,7 +7,7 @@
   "short_name": "FillEngine",
   "homepage_url": "https://github.com/tiger-githubb/FillEngine",
 
-  "permissions": ["activeTab", "storage"],
+  "permissions": ["activeTab", "tabs", "storage", "scripting"],
 
   "host_permissions": ["https://docs.google.com/forms/*"],
 
@@ -24,9 +24,20 @@
 
   "content_scripts": [
     {
-      "matches": ["https://docs.google.com/forms/*"],
-      "js": ["content.js"],
-      "run_at": "document_idle"
+      "matches": ["<all_urls>"],
+      "js": [
+        "src/utils/Logger.js",
+        "src/core/config.js",
+        "src/core/pageDetector.js",
+        "src/form/generateDictionary.js",
+        "src/form/FormDetector.js",
+        "src/form/FieldMatcher.js",
+        "src/form/FieldFiller.js",
+        "src/form/FormAutoFiller.js",
+        "src/init/content-init.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
     }
   ],
 

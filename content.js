@@ -929,32 +929,80 @@ class FieldFiller {
 		}
 	}
 
+	// Helper methods for Google Forms select handling
+	static normalizeString(value) {
+		return String(value ?? "")
+			.toLowerCase()
+			.trim();
+	}
+
+	static getGoogleFormsOptions(field) {
+		return field.querySelectorAll('[role="option"]');
+	}
+
+	static openGoogleFormsDropdown(field) {
+		field.focus();
+		field.click();
+		const events = ["mousedown", "mouseup", "click"];
+		events.forEach((eventType) => {
+			field.dispatchEvent(new MouseEvent(eventType, { bubbles: true }));
+		});
+		return this.getGoogleFormsOptions(field);
+	}
+
+	static isPlaceholderOption(text) {
+		const normalized = this.normalizeString(text);
+		return normalized === "sélectionner" || normalized === "select";
+	}
+
+	static isGoogleOptionMatch(optionText, dataValueLower, targetValue) {
+		return (
+			optionText === targetValue ||
+			dataValueLower === targetValue ||
+			optionText.includes(targetValue) ||
+			targetValue.includes(optionText) ||
+			(dataValueLower &&
+				(dataValueLower.includes(targetValue) ||
+					targetValue.includes(dataValueLower)))
+		);
+	}
+
+	static triggerOptionSelection(option) {
+		option.click();
+		option.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+		option.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+		option.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+	}
+
+	static updateAriaSelected(options, selectedOption) {
+		options.forEach((opt) => {
+			opt.setAttribute("aria-selected", opt === selectedOption ? "true" : "false");
+		});
+	}
+
+	static optionsToLogArray(options) {
+		return Array.from(options).map(
+			(opt) =>
+				`"${opt.textContent}" (data-value: "${opt.getAttribute("data-value")}")`
+		);
+	}
+
 	static setGoogleFormsSelectValue(field, value) {
 		if (!field || value === undefined || value === null) {
 			return false;
 		}
 
 		try {
-			const targetValue = String(value).toLowerCase().trim();
+			const targetValue = this.normalizeString(value);
 
 			Logger.debug(`Attempting to set Google Forms dropdown to: "${value}"`);
 
 			// First, try to find options directly
-			let options = field.querySelectorAll('[role="option"]');
+			let options = this.getGoogleFormsOptions(field);
 
 			// If no options found, try to open the dropdown first
 			if (options.length === 0) {
-				field.focus();
-				field.click();
-
-				// Trigger some events that might help open the dropdown
-				const events = ["mousedown", "mouseup", "click"];
-				events.forEach((eventType) => {
-					field.dispatchEvent(new MouseEvent(eventType, { bubbles: true }));
-				});
-
-				// Try to find options again
-				options = field.querySelectorAll('[role="option"]');
+				options = this.openGoogleFormsDropdown(field);
 			}
 
 			let matchFound = false;
@@ -962,45 +1010,20 @@ class FieldFiller {
 			Logger.debug(`Found ${options.length} options in Google Forms dropdown`);
 
 			for (const option of options) {
-				const optionText = option.textContent.toLowerCase().trim();
+				const optionText = this.normalizeString(option.textContent);
 				const dataValue = option.getAttribute("data-value");
-				const dataValueLower = dataValue ? dataValue.toLowerCase().trim() : "";
+				const dataValueLower = dataValue ? this.normalizeString(dataValue) : "";
 
-				Logger.debug(
-					`Checking option: text="${optionText}", data-value="${dataValueLower}"`
-				);
+				Logger.debug(`Checking option: text="${optionText}", data-value="${dataValueLower}"`);
 
 				// Skip the placeholder "Sélectionner" option
-				if (optionText === "sélectionner" || optionText === "select") {
+				if (this.isPlaceholderOption(optionText)) {
 					continue;
 				}
 
-				if (
-					optionText === targetValue ||
-					dataValueLower === targetValue ||
-					optionText.includes(targetValue) ||
-					targetValue.includes(optionText) ||
-					(dataValue &&
-						(dataValueLower.includes(targetValue) ||
-							targetValue.includes(dataValueLower)))
-				) {
-					// Click the option to select it
-					option.click();
-
-					// Also trigger mouse events
-					option.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
-					option.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
-					option.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-
-					// Set aria-selected attribute
-					option.setAttribute("aria-selected", "true");
-
-					// Update other options to be unselected
-					options.forEach((opt) => {
-						if (opt !== option) {
-							opt.setAttribute("aria-selected", "false");
-						}
-					});
+				if (this.isGoogleOptionMatch(optionText, dataValueLower, targetValue)) {
+					this.triggerOptionSelection(option);
+					this.updateAriaSelected(options, option);
 
 					matchFound = true;
 
@@ -1015,15 +1038,7 @@ class FieldFiller {
 				Logger.debug(
 					`No matching option found in Google Forms dropdown for: "${value}"`
 				);
-				Logger.debug(
-					`Available options:`,
-					Array.from(options).map(
-						(opt) =>
-							`"${opt.textContent}" (data-value: "${opt.getAttribute(
-								"data-value"
-							)}")`
-					)
-				);
+				Logger.debug(`Available options:`, this.optionsToLogArray(options));
 			}
 
 			return matchFound;
