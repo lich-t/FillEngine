@@ -8,7 +8,21 @@ class FormDetector {
 			const elements = document.querySelectorAll(selector);
 			if (elements.length > 0) {
 				const validContainers = Array.from(elements).filter((container) => {
-					const hasInput = container.querySelector("input, textarea, select");
+					const hasInput = container.querySelector(
+						[
+							'input[type="text"]',
+							'input[type="email"]',
+							'input[type="tel"]',
+							'input[type="date"]',
+							"select",
+							"textarea",
+							'div[role="listbox"]',
+							'div[role="radio"]',
+							'div[role="checkbox"]',
+							'span[role="radio"]',
+							'span[role="checkbox"]',
+						].join(", ")
+					);
 					const hasText =
 						container.textContent && container.textContent.trim().length > 10;
 
@@ -38,7 +52,21 @@ class FormDetector {
 		if (containers.length === 0) {
 			const allDivs = document.querySelectorAll("div");
 			containers = Array.from(allDivs).filter((div) => {
-				const hasInput = div.querySelector("input, textarea");
+				const hasInput = div.querySelector(
+					[
+						'input[type="text"]',
+						'input[type="email"]',
+						'input[type="tel"]',
+						'input[type="date"]',
+						"select",
+						"textarea",
+						'div[role="listbox"]',
+						'div[role="radio"]',
+						'div[role="checkbox"]',
+						'span[role="radio"]',
+						'span[role="checkbox"]',
+					].join(", ")
+				);
 				const hasText = div.textContent && div.textContent.trim().length > 10;
 				const hasQuestionIndicators =
 					div.querySelector("h1, h2, h3, h4, h5, h6, label") ||
@@ -95,18 +123,21 @@ class FormDetector {
 		let input = container.querySelector(
 			[
 				// Prefer role-based elements (Google Forms)
+				'div[role="listbox"]', // GF select
 				'div[role="radio"]',
 				'div[role="checkbox"]',
-				'div[role="listbox"]',
 				'span[role="radio"]',
 				'span[role="checkbox"]',
+				// GF select common wrapper classes
+				'.jgvuAb',
+				'.MocG8c',
 				// Then standard controls
+				"select",
+				'input[type="date"]',
 				'input[type="text"]',
 				'input[type="email"]',
 				'input[type="tel"]',
-				'input[type="date"]',
 				"textarea",
-				"select",
 				'input[type="radio"]',
 				'input[type="checkbox"]',
 			].join(", ")
@@ -127,7 +158,10 @@ class FormDetector {
 				if (firstCheckbox) return firstCheckbox;
 			}
 
-			const selectGroup = container.querySelector(".jgvuAb");
+			const selectGroup =
+				container.querySelector(".jgvuAb") ||
+				container.querySelector('.MocG8c') ||
+				container.querySelector('[role="listbox"]');
 			if (selectGroup) {
 				return selectGroup;
 			}

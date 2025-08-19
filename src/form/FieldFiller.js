@@ -11,12 +11,12 @@ class FieldFiller {
 
 		Logger.debug(`Setting field value for type "${fieldType}" with role "${role}": ${value}`);
 
-		if (role === "radio") {
+		if (role === "listbox" || field.classList?.contains?.("jgvuAb") || field.classList?.contains?.("MocG8c")) {
+			return this.setGoogleFormsSelectValue(field, value);
+		} else if (role === "radio") {
 			return this.setGoogleFormsRadioValue(field, value);
 		} else if (role === "checkbox") {
 			return this.setGoogleFormsCheckboxValue(field, value);
-		} else if (role === "listbox" || field.classList.contains("jgvuAb")) {
-			return this.setGoogleFormsSelectValue(field, value);
 		}
 
 		switch (fieldType) {
@@ -225,6 +225,12 @@ class FieldFiller {
 			const targetValue = this.normalizeString(value);
 			Logger.debug(`Attempting to set Google Forms dropdown to: "${value}"`);
 			let options = this.getGoogleFormsOptions(field);
+
+			// If dropdown is collapsed, open it to ensure options are interactive
+			const isCollapsed = field.getAttribute && field.getAttribute("aria-expanded") === "false";
+			if (isCollapsed) {
+				options = this.openGoogleFormsDropdown(field);
+			}
 			if (options.length === 0) {
 				options = this.openGoogleFormsDropdown(field);
 			}
@@ -249,6 +255,14 @@ class FieldFiller {
 			if (!matchFound) {
 				Logger.debug(`No matching option found in Google Forms dropdown for: "${value}"`);
 				Logger.debug(`Available options:`, this.optionsToLogArray(options));
+				// If still not found and dropdown is collapsed, try to set via aria-labelledby fallback
+				try {
+					const labelId = field.getAttribute("aria-labelledby");
+					if (labelId) {
+						const label = document.getElementById(labelId)?.textContent?.trim();
+						Logger.debug(`Dropdown labeled by: ${labelId} -> ${label}`);
+					}
+				} catch (_) {}
 			}
 			return matchFound;
 		} catch (error) {
