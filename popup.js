@@ -12,8 +12,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const statusDiv = document.getElementById("status");
   const statsDiv = document.getElementById("stats");
   const fieldsDetectedSpan = document.getElementById("fieldsDetected");
+  const fieldsUnfilledSpan = document.getElementById("fieldsUnfilled");
   const fieldsFilledSpan = document.getElementById("fieldsFilled");
-  const successRateSpan = document.getElementById("successRate");
   const resultsDiv = document.getElementById("results");
   const csvFileInput = document.getElementById("csvFileInput");
   const fileStatus = document.getElementById("fileStatus");
@@ -889,12 +889,12 @@ document.addEventListener("DOMContentLoaded", function () {
    */
   function updateStats(results) {
     const totalFields = results.length;
+    const unfilledFields = results.filter((result) => !result.matched).length;
     const filledFields = results.filter((result) => result.matched).length;
-    const successRate = totalFields > 0 ? Math.round((filledFields / totalFields) * 100) : 0;
 
     fieldsDetectedSpan.textContent = totalFields;
+    fieldsUnfilledSpan.textContent = unfilledFields;
     fieldsFilledSpan.textContent = filledFields;
-    successRateSpan.textContent = `${successRate}%`;
 
     statsDiv.style.display = "block";
   }
@@ -906,42 +906,35 @@ document.addEventListener("DOMContentLoaded", function () {
   function showResults(results) {
     resultsDiv.innerHTML = "";
 
-    const filledResults = results.filter((result) => result.matched);
     const unfilledResults = results.filter((result) => !result.matched);
 
-    // Show filled fields
-    if (filledResults.length > 0) {
-      const filledSection = document.createElement("div");
-      filledSection.className = "results-section";
-      filledSection.innerHTML = `<h4>✅ Champs remplis (${filledResults.length})</h4>`;
+    // Header: Champ | Type
+    const header = document.createElement("div");
+    header.className = "results-header";
+    header.innerHTML = `<div>Champ</div><div>Type</div>`;
+    resultsDiv.appendChild(header);
 
-      filledResults.forEach((result) => {
-        const item = document.createElement("div");
-        item.className = "result-item success";
-        item.innerHTML = `
-          <strong>${result.field}</strong>: ${result.value}
-          <small>${result.element}</small>
-        `;
-        filledSection.appendChild(item);
-      });
-
-      resultsDiv.appendChild(filledSection);
-    }
-
-    // Show unfilled fields
+    // Only show unfilled fields
     if (unfilledResults.length > 0) {
-      const unfilledSection = document.createElement("div");
-      unfilledSection.className = "results-section";
-      unfilledSection.innerHTML = `<h4>❌ Champs non trouvés (${unfilledResults.length})</h4>`;
-
       unfilledResults.forEach((result) => {
         const item = document.createElement("div");
         item.className = "result-item error";
-        item.innerHTML = `<strong>${result.field}</strong>: ${result.value}`;
-        unfilledSection.appendChild(item);
+        const question = result.questionLabel || result.field || "(inconnu)";
+        const type = result.fieldCategory || result.inputType || "-";
+        item.innerHTML = `
+          <div class="result-text">${question}</div>
+          <div class="result-text">${type}</div>
+        `;
+        resultsDiv.appendChild(item);
       });
-
-      resultsDiv.appendChild(unfilledSection);
+    } else {
+      const item = document.createElement("div");
+      item.className = "result-item success";
+      item.innerHTML = `
+        <div class="result-text">Tous les champs supportés</div>
+        <div class="result-text">-</div>
+      `;
+      resultsDiv.appendChild(item);
     }
 
     resultsDiv.style.display = "block";
