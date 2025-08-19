@@ -26,7 +26,6 @@
     {
       "matches": ["<all_urls>"],
       "js": [
-        "src/utils/Logger.js",
         "src/core/config.js",
         "src/core/pageDetector.js",
         "src/form/generateDictionary.js",
