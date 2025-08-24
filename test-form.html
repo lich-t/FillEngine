@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Form for FillEngine Highlighting</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .question-container {
+            margin-bottom: 25px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .question-label {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+            display: block;
+        }
+        input[type="text"], input[type="email"], input[type="tel"], input[type="date"], select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        .radio-group, .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .radio-group label, .checkbox-group label {
+            font-weight: normal;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>Test Form - FillEngine Highlighting</h1>
+        
+        <div class="test-info">
+            <strong>Instructions de test :</strong>
+            <ol>
+                <li>Chargez cette extension FillEngine dans Chrome</li>
+                <li>Remplissez partiellement ce formulaire avec l'extension</li>
+                <li>Vérifiez que les champs non remplis sont automatiquement surlignés</li>
+                <li>Testez le bouton de surlignage manuel dans la popup</li>
+            </ol>
+        </div>
+
+        <form>
+            <div class="question-container">
+                <label class="question-label">Nom de famille</label>
+                <input type="text" name="lastName" placeholder="Votre nom de famille">
+            </div>
+
+            <div class="question-container">
+                <label class="question-label">Prénom</label>
+                <input type="text" name="firstName" placeholder="Votre prénom">
+            </div>
+
+            <div class="question-container">
+                <label class="question-label">Adresse email</label>
+                <input type="email" name="email" placeholder="votre.email@exemple.com">
+            </div>
+
+            <div class="question-container">
+                <label class="question-label">Numéro de téléphone</label>
+                <input type="tel" name="phone" placeholder="0123456789">
+            </div>
+
+            <div class="question-container">
+                <label class="question-label">Date de naissance</label>
+                <input type="date" name="birthDate">
+            </div>
+
+            <div class="question-container">
+                <label class="question-label">Pays de résidence</label>
+                <select name="residenceCountry">
+                    <option value="">Sélectionner...</option>
+                    <option value="france">France</option>
+                    <option value="belgique">Belgique</option>
+                    <option value="suisse">Suisse</option>
+                    <option value="canada">Canada</option>
+                </select>
+            </div>
+
+            <div class="question-container">
+                <label class="question-label">Sexe</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="gender" value="homme"> Homme</label>
+                    <label><input type="radio" name="gender" value="femme"> Femme</label>
+                </div>
+            </div>
+
+            <div class="question-container">
+                <label class="question-label">Types d'examens (plusieurs choix possibles)</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" name="examTypes" value="ce"> Compréhension écrite (CE)</label>
+                    <label><input type="checkbox" name="examTypes" value="co"> Compréhension orale (CO)</label>
+                    <label><input type="checkbox" name="examTypes" value="ee"> Expression écrite (EE)</label>
+                    <label><input type="checkbox" name="examTypes" value="eo"> Expression orale (EO)</label>
+                </div>
+            </div>
+
+            <div class="question-container">
+                <label class="question-label">Commentaires supplémentaires</label>
+                <textarea name="comments" placeholder="Ajoutez vos commentaires ici..."></textarea>
+            </div>
+
+            <div class="question-container">
+                <label class="question-label">Acceptez-vous les conditions ?</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" name="termsAccepted" value="true"> J'accepte les conditions d'utilisation</label>
+                </div>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

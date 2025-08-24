@@ -211,6 +211,9 @@ class FormAutoFiller {
 		);
 		Logger.debug("Detection results:", this.statistics.detectionResults);
 
+		// Automatically highlight unfilled fields after form filling
+		this.highlightUnfilledFields();
+	
 		return {
 			success: true,
 			message: `Analysé ${this.statistics.fieldsDetected} questions - Rempli ${this.statistics.fieldsFilled} champs (${overallSuccessRate}%)`,
@@ -231,6 +234,196 @@ class FormAutoFiller {
 
 	getFieldMappings() {
 		return { ...FIELD_MAPPINGS };
+	}
+
+	/**
+	 * Highlight unfilled fields with visual indicators and labels
+	 * @returns {Object} Result object with success status and statistics
+	 */
+	highlightUnfilledFields() {
+		Logger.info("Starting automatic highlighting of unfilled fields...");
+		
+		// Remove any existing highlights first
+		this.removeHighlights();
+		
+		let highlightedCount = 0;
+		const containers = FormDetector.findQuestionContainers();
+		
+		containers.forEach((container, index) => {
+			const questionLabel = FormDetector.extractQuestionLabel(container);
+			if (!questionLabel) return;
+			
+			// Check if this field was filled by looking at our statistics
+			const fieldResult = this.statistics.detectionResults.find(
+				result => result.questionLabel === questionLabel
+			);
+			
+			// Only highlight if field was not filled and is a supported field type
+			if (fieldResult && !fieldResult.matched && fieldResult.hasInputField && 
+				(fieldResult.fieldCategory === "text" || fieldResult.fieldCategory === "radio" || 
+				 fieldResult.fieldCategory === "checkbox" || fieldResult.fieldCategory === "date" || 
+				 fieldResult.fieldCategory === "select")) {
+				
+				this.addHighlightToField(container, questionLabel);
+				highlightedCount++;
+			}
+		});
+		
+		Logger.info(`Highlighted ${highlightedCount} unfilled fields`);
+		
+		return {
+			success: true,
+			highlightedCount: highlightedCount,
+			message: `${highlightedCount} champs non remplis surlignés`
+		};
+	}
+	
+	/**
+	 * Add highlight styling to a specific field container
+	 * @param {Element} container - The field container element
+	 * @param {string} questionLabel - The question label text
+	 */
+	addHighlightToField(container, questionLabel) {
+		try {
+			// Add highlight class to container
+			container.classList.add('autofill-highlight-unfilled');
+			
+			// Find input field in container and add change listener
+			const inputField = FormDetector.findInputField(container);
+			if (inputField) {
+				this.addFieldChangeListener(container, inputField);
+			}
+			
+			Logger.debug(`Added highlight to field: "${questionLabel}"`);
+		} catch (error) {
+			Logger.error(`Error adding highlight to field: ${error.message}`);
+		}
+	}
+	
+	/**
+	 * Add change listener to an input field to remove highlighting when filled
+	 * @param {Element} container - The field container element
+	 * @param {Element} inputField - The input field element
+	 */
+	addFieldChangeListener(container, inputField) {
+		try {
+			const removeHighlightOnChange = () => {
+				if (this.isFieldFilled(inputField)) {
+					container.classList.remove('autofill-highlight-unfilled');
+					Logger.debug('Removed highlight from filled field');
+				}
+			};
+			
+			// Add multiple event listeners to catch different types of input
+			inputField.addEventListener('input', removeHighlightOnChange);
+			inputField.addEventListener('change', removeHighlightOnChange);
+			inputField.addEventListener('blur', removeHighlightOnChange);
+			
+			// For radio buttons and checkboxes, listen for click events
+			if (inputField.type === 'radio' || inputField.type === 'checkbox') {
+				inputField.addEventListener('click', removeHighlightOnChange);
+			}
+			
+			// For select elements
+			if (inputField.tagName.toLowerCase() === 'select') {
+				inputField.addEventListener('change', removeHighlightOnChange);
+			}
+			
+			// For elements with role attributes (Google Forms)
+			if (inputField.getAttribute('role')) {
+				inputField.addEventListener('click', removeHighlightOnChange);
+				// Also listen for mutations on the container for Google Forms dynamic updates
+				const observer = new MutationObserver(() => {
+					if (this.isFieldFilled(inputField)) {
+						container.classList.remove('autofill-highlight-unfilled');
+						Logger.debug('Removed highlight from filled field (mutation)');
+						observer.disconnect();
+					}
+				});
+				observer.observe(container, { childList: true, subtree: true, attributes: true });
+			}
+			
+		} catch (error) {
+			Logger.error(`Error adding field change listener: ${error.message}`);
+		}
+	}
+	
+	/**
+	 * Check if a field is filled with a value
+	 * @param {Element} inputField - The input field element
+	 * @returns {boolean} True if field has a value
+	 */
+	isFieldFilled(inputField) {
+		try {
+			if (!inputField) return false;
+			
+			// For text inputs, textareas, selects
+			if (inputField.value && inputField.value.trim() !== '') {
+				return true;
+			}
+			
+			// For radio buttons - check if any in the group is selected
+			if (inputField.type === 'radio') {
+				const radioGroup = document.querySelectorAll(`input[name="${inputField.name}"]`);
+				return Array.from(radioGroup).some(radio => radio.checked);
+			}
+			
+			// For checkboxes
+			if (inputField.type === 'checkbox') {
+				return inputField.checked;
+			}
+			
+			// For Google Forms elements with role attributes
+			if (inputField.getAttribute('role')) {
+				// Check for aria-checked attribute
+				if (inputField.getAttribute('aria-checked') === 'true') {
+					return true;
+				}
+				
+				// Check for selected options in dropdowns
+				if (inputField.getAttribute('role') === 'listbox') {
+					const selectedOption = inputField.querySelector('[aria-selected="true"]');
+					return !!selectedOption;
+				}
+				
+				// Check for text content in text-like fields
+				if (inputField.textContent && inputField.textContent.trim() !== '') {
+					return true;
+				}
+			}
+			
+			return false;
+		} catch (error) {
+			Logger.error(`Error checking if field is filled: ${error.message}`);
+			return false;
+		}
+	}
+	
+	/**
+	 * Remove all highlighting from unfilled fields
+	 * @returns {Object} Result object with success status
+	 */
+	removeHighlights() {
+		try {
+			// Remove all highlight classes
+			const highlightedElements = document.querySelectorAll('.autofill-highlight-unfilled');
+			highlightedElements.forEach(element => {
+				element.classList.remove('autofill-highlight-unfilled');
+			});
+			
+			Logger.debug(`Removed highlights from ${highlightedElements.length} fields`);
+			
+			return {
+				success: true,
+				removedCount: highlightedElements.length
+			};
+		} catch (error) {
+			Logger.error(`Error removing highlights: ${error.message}`);
+			return {
+				success: false,
+				error: error.message
+			};
+		}
 	}
 }
 

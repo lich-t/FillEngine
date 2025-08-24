@@ -1,5 +1,50 @@
 "use strict";
 
+// Inject CSS styles for highlighting unfilled fields
+function injectHighlightStyles() {
+	const styleId = 'autofill-highlight-styles';
+	
+	// Check if styles are already injected
+	if (document.getElementById(styleId)) {
+		return;
+	}
+	
+	const style = document.createElement('style');
+	style.id = styleId;
+	style.textContent = `
+		/* AutoFill highlighting styles for unfilled fields */
+		.autofill-highlight-unfilled {
+			position: relative;
+			border: 2px solid #dc2626 !important;
+			border-radius: 8px !important;
+			background-color: rgba(254, 202, 202, 0.1) !important;
+			box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
+			padding: 8px !important;
+			margin: 4px 0 !important;
+			transition: all 0.3s ease !important;
+		}
+		
+		.autofill-highlight-unfilled:hover {
+			box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2) !important;
+		}
+		
+		/* Dark mode support */
+		@media (prefers-color-scheme: dark) {
+			.autofill-highlight-unfilled {
+				border-color: #ef4444 !important;
+				background-color: rgba(239, 68, 68, 0.1) !important;
+				box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+			}
+		}
+	`;
+	
+	document.head.appendChild(style);
+	console.log('[AutoFill] Highlight styles injected');
+}
+
+// Inject styles immediately when content script loads
+injectHighlightStyles();
+
 // Detect page type and initialize autofiller
 console.log("[AutoFill] Content init script loaded");
 // Ensure Logger binding exists even if Logger.js didn't load for any reason
@@ -117,6 +162,40 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		sendResponse({ success: true, profile: autoFiller.getUserProfile() });
 	} else if (message.action === "getFieldMappings") {
 		sendResponse({ success: true, mappings: autoFiller.getFieldMappings() });
+	} else if (message.action === "highlightUnfilledFields") {
+		try {
+			if (!autoFiller) {
+				console.error("[AutoFill] autoFiller not initialized for highlighting");
+				sendResponse({ success: false, error: "autoFiller not initialized" });
+				return true;
+			}
+			
+			const result = autoFiller.highlightUnfilledFields();
+			console.log("🎨 HIGHLIGHT RESULT:", result);
+			Logger.info("Highlight result:", result);
+			sendResponse({ success: !!result?.success, highlightedCount: result?.highlightedCount || 0 });
+		} catch (error) {
+			console.error("❌ ERROR IN HIGHLIGHT HANDLER:", error);
+			Logger.error("Error highlighting fields:", error);
+			sendResponse({ success: false, error: "Error occurred while highlighting: " + error.message });
+		}
+	} else if (message.action === "removeHighlights") {
+		try {
+			if (!autoFiller) {
+				console.error("[AutoFill] autoFiller not initialized for removing highlights");
+				sendResponse({ success: false, error: "autoFiller not initialized" });
+				return true;
+			}
+			
+			const result = autoFiller.removeHighlights();
+			console.log("🎨 REMOVE HIGHLIGHT RESULT:", result);
+			Logger.info("Remove highlight result:", result);
+			sendResponse({ success: !!result?.success, removedCount: result?.removedCount || 0 });
+		} catch (error) {
+			console.error("❌ ERROR IN REMOVE HIGHLIGHT HANDLER:", error);
+			Logger.error("Error removing highlights:", error);
+			sendResponse({ success: false, error: "Error occurred while removing highlights: " + error.message });
+		}
 	}
 	return true;
 });
